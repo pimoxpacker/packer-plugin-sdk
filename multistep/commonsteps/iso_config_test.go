@@ -113,8 +113,8 @@ func TestISOConfigPrepare_ISOUrl(t *testing.T) {
 	if len(warns) > 0 {
 		t.Fatalf("bad: %#v", warns)
 	}
-	if err == nil {
-		t.Fatal("should have error")
+	if err != nil {
+		t.Errorf("should not have error: %s", err)
 	}
 
 	// Test iso_url not set but checksum url is
@@ -129,8 +129,8 @@ func TestISOConfigPrepare_ISOUrl(t *testing.T) {
 	if len(warns) > 0 {
 		t.Fatalf("expected no warnings, got:%v", warns)
 	}
-	if len(errs) < 1 || err[0] == nil {
-		t.Fatalf("expected a populated error slice, got: %v", errs)
+	if len(errs) > 0 {
+		t.Fatalf("expected no errors, got: %v", errs)
 	}
 
 	// Test iso_url set

@@ -38,47 +38,62 @@ import (
 // In JSON:
 //
 // ```json
-//   "iso_checksum": "946a6077af6f5f95a51f82fdc44051c7aa19f9cfc5f737954845a6050543d7c2",
-//   "iso_url": "ubuntu.org/.../ubuntu-14.04.1-server-amd64.iso"
+//
+//	"iso_checksum": "946a6077af6f5f95a51f82fdc44051c7aa19f9cfc5f737954845a6050543d7c2",
+//	"iso_url": "ubuntu.org/.../ubuntu-14.04.1-server-amd64.iso"
+//
 // ```
 //
 // ```json
-//   "iso_checksum": "file:ubuntu.org/..../ubuntu-14.04.1-server-amd64.iso.sum",
-//   "iso_url": "ubuntu.org/.../ubuntu-14.04.1-server-amd64.iso"
+//
+//	"iso_checksum": "file:ubuntu.org/..../ubuntu-14.04.1-server-amd64.iso.sum",
+//	"iso_url": "ubuntu.org/.../ubuntu-14.04.1-server-amd64.iso"
+//
 // ```
 //
 // ```json
-//   "iso_checksum": "file://./shasums.txt",
-//   "iso_url": "ubuntu.org/.../ubuntu-14.04.1-server-amd64.iso"
+//
+//	"iso_checksum": "file://./shasums.txt",
+//	"iso_url": "ubuntu.org/.../ubuntu-14.04.1-server-amd64.iso"
+//
 // ```
 //
 // ```json
-//   "iso_checksum": "file:./shasums.txt",
-//   "iso_url": "ubuntu.org/.../ubuntu-14.04.1-server-amd64.iso"
+//
+//	"iso_checksum": "file:./shasums.txt",
+//	"iso_url": "ubuntu.org/.../ubuntu-14.04.1-server-amd64.iso"
+//
 // ```
 //
 // In HCL2:
 //
 // ```hcl
-//   iso_checksum = "946a6077af6f5f95a51f82fdc44051c7aa19f9cfc5f737954845a6050543d7c2"
-//   iso_url = "ubuntu.org/.../ubuntu-14.04.1-server-amd64.iso"
+//
+//	iso_checksum = "946a6077af6f5f95a51f82fdc44051c7aa19f9cfc5f737954845a6050543d7c2"
+//	iso_url = "ubuntu.org/.../ubuntu-14.04.1-server-amd64.iso"
+//
 // ```
 //
 // ```hcl
-//   iso_checksum = "file:ubuntu.org/..../ubuntu-14.04.1-server-amd64.iso.sum"
-//   iso_url = "ubuntu.org/.../ubuntu-14.04.1-server-amd64.iso"
+//
+//	iso_checksum = "file:ubuntu.org/..../ubuntu-14.04.1-server-amd64.iso.sum"
+//	iso_url = "ubuntu.org/.../ubuntu-14.04.1-server-amd64.iso"
+//
 // ```
 //
 // ```hcl
-//   iso_checksum = "file://./shasums.txt"
-//   iso_url = "ubuntu.org/.../ubuntu-14.04.1-server-amd64.iso"
+//
+//	iso_checksum = "file://./shasums.txt"
+//	iso_url = "ubuntu.org/.../ubuntu-14.04.1-server-amd64.iso"
+//
 // ```
 //
 // ```hcl
-//   iso_checksum = "file:./shasums.txt",
-//   iso_url = "ubuntu.org/.../ubuntu-14.04.1-server-amd64.iso"
-// ```
 //
+//	iso_checksum = "file:./shasums.txt",
+//	iso_url = "ubuntu.org/.../ubuntu-14.04.1-server-amd64.iso"
+//
+// ```
 type ISOConfig struct {
 	// The checksum for the ISO file or virtual hard drive file. The type of
 	// the checksum is specified within the checksum field as a prefix, ex:
@@ -131,11 +146,6 @@ func (c *ISOConfig) Prepare(*interpolate.Context) (warnings []string, errs []err
 		c.RawSingleISOUrl = ""
 	}
 
-	if len(c.ISOUrls) == 0 {
-		errs = append(
-			errs, errors.New("One of iso_url or iso_urls must be specified"))
-		return
-	}
 	if c.TargetExtension == "" {
 		c.TargetExtension = "iso"
 	}
@@ -157,33 +167,36 @@ func (c *ISOConfig) Prepare(*interpolate.Context) (warnings []string, errs []err
 		//
 		// Doing this also has the added benefit of failing early if a checksum
 		// is incorrect or if getting it should fail.
-		u, err := urlhelper.Parse(c.ISOUrls[0])
-		if err != nil {
-			return warnings, append(errs, fmt.Errorf("url parse: %s", err))
-		}
+		if len(c.ISOUrls) > 0 {
+			u, err := urlhelper.Parse(c.ISOUrls[0])
+			if err != nil {
+				return warnings, append(errs, fmt.Errorf("url parse: %s", err))
+			}
 
-		q := u.Query()
-		if c.ISOChecksum != "" {
-			q.Set("checksum", c.ISOChecksum)
-		}
-		u.RawQuery = q.Encode()
+			q := u.Query()
+			if c.ISOChecksum != "" {
+				q.Set("checksum", c.ISOChecksum)
+			}
+			u.RawQuery = q.Encode()
 
-		wd, err := os.Getwd()
-		if err != nil {
-			log.Printf("Getwd: %v", err)
-			// here we ignore the error in case the
-			// working directory is not needed.
-		}
+			wd, err := os.Getwd()
+			if err != nil {
+				log.Printf("Getwd: %v", err)
+				// here we ignore the error in case the
+				// working directory is not needed.
+			}
 
-		req := &getter.Request{
-			Src: u.String(),
-			Pwd: wd,
-		}
-		cksum, err := defaultGetterClient.GetChecksum(context.TODO(), req)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("%v in %q", err, req.URL().Query().Get("checksum")))
-		} else {
-			c.ISOChecksum = cksum.String()
+			req := &getter.Request{
+				Src: u.String(),
+				Pwd: wd,
+			}
+
+			cksum, err := defaultGetterClient.GetChecksum(context.TODO(), req)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("%v in %q", err, req.URL().Query().Get("checksum")))
+			} else {
+				c.ISOChecksum = cksum.String()
+			}
 		}
 	}
 
