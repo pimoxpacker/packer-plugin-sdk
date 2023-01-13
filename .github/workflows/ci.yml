@@ -23,7 +23,9 @@ jobs:
       - name: Fetch all
         run: git fetch --all
       - name: CI Lint
-        run: make ci-lint
+        run:
+          command: make ci-lint
+          command_timeout: 20m
 
   check-fmt:
     runs-on: ubuntu-latest
