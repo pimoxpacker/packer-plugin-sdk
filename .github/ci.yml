@@ -1,0 +1,40 @@
+name: Go package
+
+on: [push]
+
+jobs:
+  test-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18.5
+      - name: Vet
+        run: make vet
+      - name: CI
+        run: TESTARGS="-coverprofile=coverage.txt -covermode=atomic" make ci
+
+  check-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Fetch all
+        run: git fetch --all
+      - name: CI Lint
+        run: make ci-lint
+
+  check-fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Fmt check
+        run: make fmt-check
+
+  check-generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Generate check
+        run: make generate-check
